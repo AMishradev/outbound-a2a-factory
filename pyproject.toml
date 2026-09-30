@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "outbound-a2a-factory"
+version = "0.1.0"
+description = "A two-agent outbound email factory for learning the A2A protocol"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = [
+  "a2a-sdk[fastapi,postgresql]==1.2.0",
+  "httpx>=0.28.1,<1",
+  "pydantic>=2.11,<3",
+  "uvicorn[standard]>=0.35,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.4,<9",
+  "pytest-asyncio>=1.1,<2",
+  "ruff>=0.13,<1",
+]
+
+[project.scripts]
+outbound-a2a = "outbound_a2a.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/outbound_a2a"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

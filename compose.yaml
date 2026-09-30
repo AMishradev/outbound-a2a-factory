@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-a2a}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-a2a}
+      POSTGRES_DB: ${POSTGRES_DB:-outbound_factory}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-a2a} -d ${POSTGRES_DB:-outbound_factory}"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  research-agent:
+    build: .
+    command: ["outbound-a2a", "serve", "research"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://a2a:a2a@postgres:5432/outbound_factory}
+      AGENT_PUBLIC_URL: http://research-agent:8001
+      PORT: "8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+
+  draft-agent:
+    build: .
+    command: ["outbound-a2a", "serve", "draft"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://a2a:a2a@postgres:5432/outbound_factory}
+      AGENT_PUBLIC_URL: http://draft-agent:8002
+      RESEARCH_AGENT_URL: ${RESEARCH_AGENT_URL:-http://research-agent:8001}
+      PORT: "8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      research-agent:
+        condition: service_started
+    ports:
+      - "8002:8002"
+
+volumes:
+  postgres-data:
